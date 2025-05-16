@@ -1,15 +1,16 @@
 # IntegraMind
 
-![IntegraMind Banner](./images/banner.png)
-
-## An Intelligent Framework for Unified Assessment and Intervention in Dual Diagnosis
-
-IntegraMind is a novel graph-based chatbot framework that simultaneously addresses co-occurring mental health disorders and substance use disorders (SUDs) through a unified system. This framework employs a multi-agent architecture implemented with LangGraph, where specialized agents handle distinct conversation aspects while collaborating to provide comprehensive support.
-
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.95.0-green.svg)](https://fastapi.tiangolo.com/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.22.0-red.svg)](https://streamlit.io/)
+
+
+> An Intelligent Framework for Unified Assessment and Intervention in Dual Diagnosis
+
+IntegraMind is a novel graph-based chatbot framework that simultaneously addresses co-occurring mental health disorders and substance use disorders (SUDs) through a unified system. This framework employs a multi-agent architecture implemented with LangGraph, where specialized agents handle distinct conversation aspects while collaborating to provide comprehensive support.
+
+![System Architecture](./images/fig_1.png)
 
 ## 🌟 Features
 
@@ -22,8 +23,6 @@ IntegraMind is a novel graph-based chatbot framework that simultaneously address
 ## 📊 System Architecture
 
 The system is designed as a directed graph where each node represents a functional component with specific responsibilities.
-
-![System Architecture](./images/fig_1.png)
 
 ### Agent Graph Structure
 
