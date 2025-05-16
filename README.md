@@ -1,7 +1,5 @@
 # IntegraMind
 
-![IntegraMind Logo](./images/integramind_logo.png)
-
 ## An Intelligent Framework for Unified Assessment and Intervention in Dual Diagnosis
 
 IntegraMind is a novel graph-based chatbot framework that simultaneously addresses co-occurring mental health disorders and substance use disorders (SUDs) through a unified system. This framework employs a multi-agent architecture implemented with LangGraph, where specialized agents handle distinct conversation aspects while collaborating to provide comprehensive support.
@@ -70,7 +68,7 @@ The knowledge base is organized into four main categories:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/integramind.git
+   git clone https://github.com/RamanarayanRansingh/IntegraMind.git
    cd integramind
    ```
 
