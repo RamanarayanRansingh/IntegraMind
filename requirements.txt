@@ -1,0 +1,13 @@
+uvicorn
+fastapi
+requests
+sqlalchemy
+langchain_core
+langgraph
+dotenv
+langgraph.prebuilt
+langchain_google_genai
+chromadb
+sentence_transformers
+langgraph.checkpoint.sqlite
+streamlit
