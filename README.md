@@ -21,13 +21,13 @@ IntegraMind is a novel graph-based chatbot framework that simultaneously address
 
 The system is designed as a directed graph where each node represents a functional component with specific responsibilities.
 
-![System Architecture](./images/system_architecture.png)
+![System Architecture](./images/fig_1.png)
 
 ### Agent Graph Structure
 
 IntegraMind's multi-agent structure enables modular development and clear separation of concerns.
 
-![Agent Graph](./images/agent_graph.png)
+![Agent Graph](./images/graph.png)
 
 ## 🔄 Key Components
 
@@ -35,22 +35,21 @@ IntegraMind's multi-agent structure enables modular development and clear separa
 
 IntegraMind naturally embeds clinical assessments into the conversation flow, making the process feel natural and engaging.
 
-![PHQ-9 Integration](./images/phq9_integration.png)
+![PHQ-9 Integration](./images/fig_2.png)
 
 After completing assessments, users receive feedback on their results:
 
-![Assessment Results](./images/assessment_result.png)
+![Assessment Results](./images/fig_3.png)
 
 ### 2. Safety Protocol System
 
 A tiered risk assessment protocol with human oversight ensures user safety:
 
-![Crisis Response Interface](./images/crisis_response_interface.png)
+![Crisis Response Interface](./images/fig_4.png)
 
 For Level 3 and Level 4 situations, the system notifies the designated therapist:
 
-![Therapist Alert Interface](./images/therapist_alert_interface.png)
-![Email Notification](./images/email_notification.png)
+![Email Notification](./images/fig_5.png)
 
 ### 3. Knowledge Base Structure
 
