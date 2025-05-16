@@ -1,11 +1,15 @@
 # IntegraMind
 
+![IntegraMind Banner](./images/banner.png)
+
 ## An Intelligent Framework for Unified Assessment and Intervention in Dual Diagnosis
 
 IntegraMind is a novel graph-based chatbot framework that simultaneously addresses co-occurring mental health disorders and substance use disorders (SUDs) through a unified system. This framework employs a multi-agent architecture implemented with LangGraph, where specialized agents handle distinct conversation aspects while collaborating to provide comprehensive support.
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.95.0-green.svg)](https://fastapi.tiangolo.com/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.22.0-red.svg)](https://streamlit.io/)
 
 ## 🌟 Features
 
@@ -52,10 +56,31 @@ For Level 3 and Level 4 situations, the system notifies the designated therapist
 ### 3. Knowledge Base Structure
 
 The knowledge base is organized into four main categories:
-- CBT Exercises and Worksheets
-- Psychoeducational Materials
-- Crisis Protocols and Safety Planning
-- Evidence-Based Intervention Guides
+
+<div align="center">
+  <table>
+    <tr>
+      <th>Category</th>
+      <th>Contents</th>
+    </tr>
+    <tr>
+      <td>📝 CBT Exercises and Worksheets</td>
+      <td>Thought record sheets, cognitive restructuring guides, behavioral activation worksheets, substance use tracking diaries, relapse prevention exercises</td>
+    </tr>
+    <tr>
+      <td>📚 Psychoeducational Materials</td>
+      <td>Anxiety and depression self-help guides, substance use disorder information, co-occurring disorders resources</td>
+    </tr>
+    <tr>
+      <td>🚨 Crisis Protocols and Safety Planning</td>
+      <td>Safety plan templates, suicide risk assessment guides, crisis intervention protocols, substance-related emergency procedures</td>
+    </tr>
+    <tr>
+      <td>🔍 Evidence-Based Intervention Guides</td>
+      <td>Treatment manuals for substance use, guidelines for co-occurring disorders, best practice recommendations</td>
+    </tr>
+  </table>
+</div>
 
 ## 🚀 Getting Started
 
@@ -68,7 +93,7 @@ The knowledge base is organized into four main categories:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/RamanarayanRansingh/IntegraMind.git
+   git clone https://github.com/your-username/integramind.git
    cd integramind
    ```
 
@@ -88,61 +113,117 @@ The knowledge base is organized into four main categories:
    python src/main.py
    ```
 
-## 📝 Usage Example
+## 📝 Running the Application
 
-```python
-from integramind import IntegraMindApp
+### FastAPI Backend
 
-# Initialize the application
-app = IntegraMindApp(
-    api_key="your_api_key",
-    knowledge_base_path="path/to/knowledge_base"
-)
+The IntegraMind backend is built with FastAPI, which provides the API endpoints for the chatbot functionality.
 
-# Start a conversation
-response = app.chat("I've been feeling really down lately and drinking more than usual.")
-print(response)
-```
+1. Start the FastAPI server:
+   ```bash
+   # Navigate to the backend directory
+   cd backend
+   
+   # Start the FastAPI server with hot reload enabled
+   uvicorn app.main:app --reload
+   ```
+
+2. The API documentation will be available at:
+   ```
+   http://localhost:8000/docs
+   ```
+
+### Streamlit Frontend
+
+The user interface is built with Streamlit for an interactive chat experience.
+
+1. Start the Streamlit application:
+   ```bash
+   # Navigate to the frontend directory
+   cd frontend
+   
+   # Run the Streamlit app
+   streamlit run app.py
+   ```
+
+2. Access the web interface at:
+   ```
+   http://localhost:8501
+   ```
 
 ## 📊 Comparative Advantages
 
-| Feature | IntegraMind | Traditional Chatbots |
-|---------|-------------|----------------------|
-| Integrated assessment | Embeds validated tools for both mental health and SUDs | May include only mental health or only SUD assessments |
-| Crisis detection | Multi-level risk assessment with substance-specific protocols | Limited to specific crisis types or generic detection |
-| Human oversight | Automated therapist alerts with detailed clinical context | Limited or no human involvement |
-| Knowledge foundation | Evidence-based content for co-occurring disorders | Single domain focus |
-| Architecture | Graph-based multi-agent system with specialized nodes | Typically single-agent or rule-based |
+<div align="center">
+  <table>
+    <tr>
+      <th>Feature</th>
+      <th>IntegraMind</th>
+      <th>Traditional Chatbots</th>
+    </tr>
+    <tr>
+      <td><b>Integrated assessment</b></td>
+      <td>✅ Embeds validated tools for both mental health and SUDs</td>
+      <td>❌ May include only mental health or only SUD assessments</td>
+    </tr>
+    <tr>
+      <td><b>Crisis detection</b></td>
+      <td>✅ Multi-level risk assessment with substance-specific protocols</td>
+      <td>❌ Limited to specific crisis types or generic detection</td>
+    </tr>
+    <tr>
+      <td><b>Human oversight</b></td>
+      <td>✅ Automated therapist alerts with detailed clinical context</td>
+      <td>❌ Limited or no human involvement</td>
+    </tr>
+    <tr>
+      <td><b>Knowledge foundation</b></td>
+      <td>✅ Evidence-based content for co-occurring disorders</td>
+      <td>❌ Single domain focus</td>
+    </tr>
+    <tr>
+      <td><b>Architecture</b></td>
+      <td>✅ Graph-based multi-agent system with specialized nodes</td>
+      <td>❌ Typically single-agent or rule-based</td>
+    </tr>
+  </table>
+</div>
 
 ## 🧠 Technical Implementation
 
-The system is implemented using Python with the following key libraries:
-- LangChain and LangGraph: For the agentic architecture and graph-based orchestration
-- Google Generative AI: As the underlying large language model
-- SQLite: For persistent state management and checkpoint storage
+The system is implemented using a modern tech stack:
 
-Core implementation of the state graph:
-
-```python
-# Build the state graph
-builder = StateGraph(State)
-
-# Add nodes
-builder.add_node("assistant", MentalHealthAssistant(assistant_runnable))
-builder.add_node("assessment_tools", create_tool_node_with_fallback(assessment_tools))
-builder.add_node("safety_tools", create_tool_node_with_fallback(safety_tools))
-builder.add_node("knowledge_tools", create_tool_node_with_fallback(knowledge_tools))
-
-# Define routing function and add edges
-# ... (see documentation for full implementation)
-```
+- **Backend**: FastAPI for high-performance API endpoints
+- **Frontend**: Streamlit for an interactive user interface
+- **AI Engine**: LangChain and LangGraph for the agentic architecture and conversation flow
+- **LLM Integration**: Google Generative AI as the underlying language model
+- **Database**: SQLite for persistent state management
 
 ## 🔮 Future Directions
 
-- Large-scale clinical validation studies
-- Language and cultural adaptation for diverse populations
-- Enhanced longitudinal engagement capabilities
-- Integration with electronic health records and care systems
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">🔬</td>
+      <td><b>Clinical Validation</b>: Large-scale studies to measure effectiveness and outcomes</td>
+    </tr>
+    <tr>
+      <td align="center">🌍</td>
+      <td><b>Cultural Adaptation</b>: Extending support for diverse languages and cultural contexts</td>
+    </tr>
+    <tr>
+      <td align="center">📈</td>
+      <td><b>Longitudinal Engagement</b>: Enhancing personalization over extended periods of use</td>
+    </tr>
+    <tr>
+      <td align="center">🏥</td>
+      <td><b>Healthcare Integration</b>: Connecting with electronic health records and care systems</td>
+    </tr>
+    <tr>
+      <td align="center">🧪</td>
+      <td><b>Machine Learning</b>: Developing predictive models for intervention effectiveness</td>
+    </tr>
+  </table>
+</div>
 
 ## 📄 Citation
 
@@ -157,9 +238,14 @@ If you use IntegraMind in your research, please cite:
 }
 ```
 
+## 👥 Contributors
+
+- Arun Agarwal (arunagrawal@soa.ac.in)
+- Ramanarayan Ransingh (ramanarayanransingh@gmail.com)
+
 ## 📜 License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
