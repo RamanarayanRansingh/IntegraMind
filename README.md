@@ -159,11 +159,6 @@ If you use IntegraMind in your research, please cite:
 }
 ```
 
-## 👥 Contributors
-
-- Arun Agarwal (arunagrawal@soa.ac.in)
-- Ramanarayan Ransingh (ramanarayanransingh@gmail.com)
-
 ## 📜 License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
