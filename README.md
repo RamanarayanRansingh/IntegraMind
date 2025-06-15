@@ -1,7 +1,7 @@
 # IntegraMind
 
 <div align="center">
-  <img src="./images/integramind_logo.png" alt="IntegraMind Logo" width="200">
+  <img src="./images/integramind_logo.png" alt="IntegraMind Logo" width="500">
   
   [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
   [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
