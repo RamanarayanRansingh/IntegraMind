@@ -1,7 +1,7 @@
 # IntegraMind
 
 <div align="center">
-  <img src="./images/integramind_logo.png" alt="IntegraMind Logo" width="200" height="200">
+  <img src="./images/integramind_logo.png" alt="IntegraMind Logo" width="500" height="500">
   
   [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
   [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -18,7 +18,7 @@
 IntegraMind is a groundbreaking graph-based chatbot framework that revolutionizes the treatment of co-occurring mental health disorders and substance use disorders (SUDs). By employing a sophisticated multi-agent architecture built with LangGraph, our system provides comprehensive, evidence-based support through specialized agents that collaborate seamlessly to deliver personalized therapeutic interventions.
 
 <div align="center">
-  <img src="./images/fig_1.png" alt="System Architecture" width="600">
+  <img src="./images/fig_1.png" alt="System Architecture" width="800">
   <p><em>System Architecture Overview</em></p>
 </div>
 
@@ -58,7 +58,7 @@ Built with healthcare-grade security and privacy standards
 IntegraMind's innovative design leverages a directed graph structure where each node represents a specialized functional component, enabling modular development and clear separation of concerns.
 
 <div align="center">
-  <img src="./images/graph.png" alt="Agent Graph Structure" width="500">
+  <img src="./images/graph.png" alt="Agent Graph Structure" width="600">
   <p><em>Multi-Agent Graph Architecture</em></p>
 </div>
 
@@ -69,14 +69,14 @@ IntegraMind's innovative design leverages a directed graph structure where each 
 IntegraMind naturally weaves clinical assessments into conversational flow, creating an engaging and non-intrusive experience.
 
 <div align="center">
-  <img src="./images/fig_2.png" alt="PHQ-9 Integration" width="400">
+  <img src="./images/fig_2.png" alt="PHQ-9 Integration" width="600">
   <p><em>Seamless Assessment Integration</em></p>
 </div>
 
 Users receive immediate, personalized feedback on their assessment results:
 
 <div align="center">
-  <img src="./images/fig_3.png" alt="Assessment Results" width="400">
+  <img src="./images/fig_3.png" alt="Assessment Results" width="600">
   <p><em>Personalized Assessment Feedback</em></p>
 </div>
 
@@ -85,7 +85,7 @@ Users receive immediate, personalized feedback on their assessment results:
 Our multi-tiered risk assessment protocol ensures comprehensive user safety with professional oversight:
 
 <div align="center">
-  <img src="./images/fig_4.png" alt="Crisis Response Interface" width="400">
+  <img src="./images/fig_4.png" alt="Crisis Response Interface" width="600">
   <p><em>Crisis Response Interface</em></p>
 </div>
 
