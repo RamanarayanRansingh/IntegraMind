@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 from datetime import datetime
 from langchain.tools import tool
 from Data_Base.db_manager import store_assessment_result, get_previous_risk_assessments
@@ -26,7 +26,6 @@ GAD7_QUESTIONS = [
     "Feeling afraid as if something awful might happen?"
 ]
 
-# New assessment questions for addiction
 DAST10_QUESTIONS = [
     "Have you used drugs other than those required for medical reasons?",
     "Do you abuse more than one drug at a time?",
@@ -74,7 +73,6 @@ CAGE_SEVERITY = {
     (2, 4): "High risk of alcohol dependence"
 }
 
-# Assessment configuration metadata
 ASSESSMENT_CONFIG = {
     "phq9": {
         "title": "PHQ-9 Depression Screening",
@@ -130,25 +128,20 @@ def administer_assessment(
     """
     assessment_type = assessment_type.lower()
     
-    # Validate assessment type
     if assessment_type not in ASSESSMENT_CONFIG:
         return f"Unknown assessment type: {assessment_type}. Available assessments: phq9, gad7, dast10, cage"
     
-    # Get assessment configuration
     config = ASSESSMENT_CONFIG[assessment_type]
     questions = config["questions"]
     title = config["title"]
     instructions = config["instructions"]
     
-    # Set appropriate scale based on assessment type
     if assessment_type in ["phq9", "gad7"]:
         scale = "0 = Not at all, 1 = Several days, 2 = More than half the days, 3 = Nearly every day"
     elif assessment_type in ["dast10", "cage"]:
         scale = "Please answer Yes (1) or No (0) to each question"
     
-    # Check context and format accordingly
     if context == "embedded":
-        # For embedding a single question naturally in conversation
         import random
         question_index = random.randint(0, len(questions) - 1)
         
@@ -158,41 +151,51 @@ def administer_assessment(
             return f"I'd like to ask you about something specific: {questions[question_index]}\n\nYou can respond with Yes or No."
     
     elif context == "follow-up":
-        # When continuing a partially completed assessment
-        # In a real implementation, we'd retrieve the missing questions
         if assessment_type in ["phq9", "gad7"]:
             return f"Let's continue with the assessment. For each of the remaining questions, please rate on a scale where {scale}"
         else:
             return f"Let's continue with the assessment. For each of the remaining questions, please answer Yes or No."
     
     else:
-        # Default: full assessment
         return format_assessment_for_display(assessment_type, questions, instructions, title, scale)
 
 @tool
 def calculate_assessment_score(
     assessment_type: str,
-    scores: List[int],
+    scores: Optional[List[int]] = None,
+    total_score: Optional[int] = None,
     user_id: Optional[int] = 1,
     store_result: bool = True
 ) -> str:
     """
-    Calculates and interprets assessment scores.
+    Calculates and interprets assessment scores from either individual item scores or a total score.
     
     Args:
         assessment_type: Type of assessment (phq9, gad7, dast10, cage)
-        scores: List of numeric scores (0-3 for PHQ-9/GAD-7, 0-1 for DAST-10/CAGE)
+        scores: List of individual item scores (0-3 for PHQ-9/GAD-7, 0-1 for DAST-10/CAGE)
+        total_score: Pre-calculated total score (use this when user only provides total)
         user_id: User ID for tracking scores over time
         store_result: Whether to store the result in the database
         
     Returns:
         Interpretation of assessment scores with comparison to previous results if available
+        
+    Note: Provide EITHER scores OR total_score, not both.
+          - Use scores when user provides individual item responses
+          - Use total_score when user provides only the final number
     """
     assessment_type = assessment_type.lower()
     
     # Validate assessment type
     if assessment_type not in ASSESSMENT_CONFIG:
         return f"Unknown assessment type: {assessment_type}. Available assessments: phq9, gad7, dast10, cage"
+    
+    # Validate input: must provide exactly one of scores or total_score
+    if scores is None and total_score is None:
+        return "Error: Must provide either 'scores' (list of individual item scores) or 'total_score' (pre-calculated total)."
+    
+    if scores is not None and total_score is not None:
+        return "Error: Provide either 'scores' OR 'total_score', not both."
     
     # Get assessment configuration
     config = ASSESSMENT_CONFIG[assessment_type]
@@ -201,42 +204,54 @@ def calculate_assessment_score(
     max_score = config["max_score"]
     severity_ranges = config["severity"]
     
-    # Validate scores based on assessment type
-    if assessment_type in ["phq9", "gad7"]:
-        for score in scores:
-            if not (0 <= score <= 3):
-                return f"Invalid score detected: {score}. For {assessment_name}, all scores must be between 0 and 3."
-    elif assessment_type in ["dast10", "cage"]:
-        for score in scores:
-            if not (0 <= score <= 1):
-                return f"Invalid score detected: {score}. For {assessment_name}, all scores must be either 0 (No) or 1 (Yes)."
-    
-    if len(scores) != required_scores:
-        return f"Error: {assessment_name} requires exactly {required_scores} scores, but {len(scores)} were provided."
-    
-    # Calculate total score with special handling for DAST-10 question 3
-    if assessment_type == "dast10":
-        # For DAST-10, question 3 is reverse scored
-        total_score = sum(scores)
-        if scores[2] == 0:  # If question 3 is answered "No"
-            total_score += 1
-            scores[2] = 1  # Update the score for storage
+    # Process based on input type
+    if scores is not None:
+        # Individual scores provided - validate and calculate
+        if assessment_type in ["phq9", "gad7"]:
+            for score in scores:
+                if not (0 <= score <= 3):
+                    return f"Invalid score detected: {score}. For {assessment_name}, all scores must be between 0 and 3."
+        elif assessment_type in ["dast10", "cage"]:
+            for score in scores:
+                if not (0 <= score <= 1):
+                    return f"Invalid score detected: {score}. For {assessment_name}, all scores must be either 0 (No) or 1 (Yes)."
+        
+        if len(scores) != required_scores:
+            return f"Error: {assessment_name} requires exactly {required_scores} scores, but {len(scores)} were provided."
+        
+        # Calculate total with special handling for DAST-10 question 3
+        if assessment_type == "dast10":
+            # DAST-10 question 3 is reverse scored:
+            # "Are you always able to stop using drugs when you want to?"
+            # No (0) = 1 point (problem), Yes (1) = 0 points (no problem)
+            adjusted_scores = scores.copy()
+            adjusted_scores[2] = 1 - scores[2]  # Reverse score question 3
+            calculated_total = sum(adjusted_scores)
+            item_scores_for_storage = adjusted_scores  # Store the adjusted scores
         else:
-            scores[2] = 0  # If "Yes", score is 0
+            calculated_total = sum(scores)
+            item_scores_for_storage = scores
+        
+        # Extract suicide risk for PHQ-9 (question 9)
+        suicide_risk_score = scores[8] if assessment_type == "phq9" and len(scores) > 8 else 0
+        
     else:
-        total_score = sum(scores)
-    
-    # Special case for PHQ-9 item 9 (suicidal ideation)
-    suicide_risk = scores[8] if assessment_type == "phq9" and len(scores) > 8 else 0
+        # Total score provided - validate and use directly
+        if not (0 <= total_score <= max_score):
+            return f"Invalid total score: {total_score}. For {assessment_name}, total score must be between 0 and {max_score}."
+        
+        calculated_total = total_score
+        suicide_risk_score = None  # Unknown without individual items
+        item_scores_for_storage = None  # Can't store individual items
     
     # Determine severity
     severity = "Unknown"
     for score_range, severity_label in severity_ranges.items():
-        if score_range[0] <= total_score <= score_range[1]:
+        if score_range[0] <= calculated_total <= score_range[1]:
             severity = severity_label
             break
     
-    # Get previous assessment for comparison if available
+    # Get previous assessment for comparison
     previous_assessment = None
     if user_id is not None:
         try:
@@ -249,17 +264,15 @@ def calculate_assessment_score(
         except Exception as e:
             print(f"Error retrieving previous assessments: {str(e)}")
     
-    # Store current assessment if requested
-    if store_result and user_id is not None:
-        # FIX: Convert ISO format string to datetime object if it's a string
-        timestamp = datetime.now()
+    # Store current assessment if requested and we have individual scores
+    if store_result and user_id is not None and item_scores_for_storage is not None:
         try:
             store_assessment_result(
                 user_id=user_id,
                 assessment_type=assessment_type,
-                total_score=total_score,
-                item_scores=scores,
-                timestamp=timestamp
+                total_score=calculated_total,
+                item_scores=item_scores_for_storage,
+                timestamp=datetime.now()
             )
         except Exception as e:
             print(f"Error storing assessment result: {str(e)}")
@@ -268,10 +281,10 @@ def calculate_assessment_score(
     return format_assessment_result(
         assessment_type=assessment_type,
         assessment_name=assessment_name,
-        total_score=total_score,
+        total_score=calculated_total,
         max_score=max_score,
         severity=severity,
-        suicide_risk=suicide_risk,
+        suicide_risk=suicide_risk_score,
         previous_assessment=previous_assessment
     )
 
@@ -282,19 +295,7 @@ def format_assessment_for_display(
     title: str,
     scale: str
 ) -> str:
-    """
-    Helper function to format assessment questions for display
-    
-    Args:
-        assessment_type: Type of assessment (phq9, gad7, dast10, cage)
-        questions: List of questions to display
-        instructions: Instructions for the assessment
-        title: Title of the assessment
-        scale: Scale description
-        
-    Returns:
-        Formatted assessment ready for display
-    """
+    """Helper function to format assessment questions for display"""
     formatted_assessment = [
         f"# {title}",
         f"{instructions}",
@@ -302,7 +303,6 @@ def format_assessment_for_display(
         ""
     ]
     
-    # Add special note for DAST-10
     if assessment_type == "dast10":
         formatted_assessment.append("Different drugs include: cannabis, cocaine, prescription stimulants, methamphetamine, inhalants, sedatives, hallucinogens, opioids, or others.")
         formatted_assessment.append("")
@@ -325,24 +325,10 @@ def format_assessment_result(
     total_score: int,
     max_score: int,
     severity: str,
-    suicide_risk: int,
+    suicide_risk: Optional[int],
     previous_assessment: Optional[Dict[str, Any]] = None
 ) -> str:
-    """
-    Helper function to format assessment results for display
-    
-    Args:
-        assessment_type: Type of assessment (phq9, gad7, dast10, cage)
-        assessment_name: Name of the assessment
-        total_score: Total assessment score
-        max_score: Maximum possible score
-        severity: Severity level description
-        suicide_risk: Score on suicide risk question (PHQ-9 item 9)
-        previous_assessment: Previous assessment data for comparison
-        
-    Returns:
-        Formatted assessment results ready for display
-    """
+    """Helper function to format assessment results for display"""
     result = [
         f"# {assessment_name} Results",
         f"Total Score: {total_score}/{max_score}",
@@ -350,19 +336,49 @@ def format_assessment_result(
         ""
     ]
     
+    # ===== ADD CRISIS SIGNAL FLAGS =====
+    crisis_indicators = []
+    
+    # Check for severe/high scores requiring crisis response
+    if assessment_type == "phq9":
+        if total_score >= 20:
+            crisis_indicators.append("🚨 CRISIS ALERT: Severe depression detected (score ≥20)")
+        elif total_score >= 15:
+            crisis_indicators.append("⚠️ HIGH RISK: Moderately severe depression detected (score ≥15)")
+    elif assessment_type == "gad7":
+        if total_score >= 15:
+            crisis_indicators.append("🚨 CRISIS ALERT: Severe anxiety detected (score ≥15)")
+    elif assessment_type == "dast10":
+        if total_score >= 6:
+            crisis_indicators.append("⚠️ HIGH RISK: Substantial drug use problems detected (score ≥6)")
+    elif assessment_type == "cage":
+        if total_score >= 3:
+            crisis_indicators.append("⚠️ HIGH RISK: High risk of alcohol dependence (score ≥3)")
+    
+    # Check for PHQ-9 item 9 (suicide risk)
+    if assessment_type == "phq9" and suicide_risk is not None and suicide_risk > 0:
+        crisis_indicators.append("🚨 SUICIDE RISK: Positive response to self-harm question (item 9)")
+    
+    # Display crisis indicators prominently at the top
+    if crisis_indicators:
+        result.append("═" * 60)
+        for indicator in crisis_indicators:
+            result.append(indicator)
+        result.append("ACTION REQUIRED: Use get_crisis_protocol and send_therapist_alert NOW")
+        result.append("═" * 60)
+        result.append("")
+    
     # Add score change if previous assessment exists
     if previous_assessment:
         prev_score = previous_assessment.get('total_score', 0)
         prev_date = previous_assessment.get('timestamp', 'unknown date')
         
-        # Parse previous date if it's an ISO format string
         if isinstance(prev_date, str):
             try:
                 prev_date = datetime.fromisoformat(prev_date).strftime("%Y-%m-%d")
             except ValueError:
                 prev_date = "unknown date"
         
-        # Calculate change
         change = total_score - prev_score
         if change > 0:
             change_text = f"increased by {change}"
@@ -374,14 +390,19 @@ def format_assessment_result(
         result.append(f"Change: Your score has {change_text} since your last assessment ({prev_date}).")
         result.append("")
     
-    # Add recommendations based on severity and assessment type
+    # Add recommendations
     result.append("## Recommendations:")
     
     if assessment_type == "phq9":
-        if suicide_risk > 0:
+        # Add safety alert if suicide risk detected
+        if suicide_risk is not None and suicide_risk > 0:
             result.append("⚠️ **Important Safety Note**: Your response indicates thoughts about self-harm or suicide. " 
                         "This is important to address right away. Please consider talking to a mental health professional "
                         "as soon as possible. If you're in immediate danger, please call emergency services or a crisis line.")
+            result.append("")
+        elif suicide_risk is None:
+            result.append("⚠️ **Important Follow-up**: The PHQ-9 includes a question about thoughts of hurting yourself. "
+                        "Could you share how you responded to that question? This helps me provide better support.")
             result.append("")
         
         if total_score < 5:
@@ -415,7 +436,6 @@ def format_assessment_result(
         else:
             result.append("Your responses suggest a severe level of problems related to drug use. Intensive assessment and treatment is strongly recommended.")
         
-        # Add information about resources
         result.append("")
         result.append("The SAMHSA National Helpline offers free, confidential, 24/7/365 treatment referral and information services for individuals facing substance use disorders: 1-800-662-HELP (4357)")
     
@@ -425,7 +445,6 @@ def format_assessment_result(
         else:
             result.append("Your responses suggest a high risk of alcohol dependence. A more thorough assessment by a healthcare professional is recommended.")
             
-        # Add information about resources
         result.append("")
         result.append("If you have concerns about your alcohol use, consider speaking with a healthcare provider or contacting the SAMHSA National Helpline: 1-800-662-HELP (4357)")
     
