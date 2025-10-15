@@ -49,6 +49,7 @@ yarn-error.log*
 
 # Python
 __pycache__/
+__pycache__
 *.py[cod]
 *$py.class
 *.so
@@ -89,3 +90,4 @@ venv/
 ENV/
 env.bak/
 venv.bak/ 
+vnv/

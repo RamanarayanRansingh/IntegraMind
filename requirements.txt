@@ -11,3 +11,6 @@ chromadb
 sentence_transformers
 langgraph.checkpoint.sqlite
 streamlit
+langchain
+fitz
+PyMuPDF

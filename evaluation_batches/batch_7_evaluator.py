@@ -1,6 +1,3 @@
-# tool_call_evaluator_fixed.py
-# Enhanced version with better debugging and tool call extraction
-
 import json
 import os
 import sys
@@ -14,33 +11,35 @@ from dotenv import load_dotenv
 from typing import Dict, List, Tuple, Optional, Any
 from langchain_core.messages import HumanMessage
 
-# --- Configuration ---
-INPUT_DATA_FILE = 'synthetic_test_data.json'
-OUTPUT_RESULTS_FILE = 'evaluation_results.json'
-DEBUG_OUTPUT_FILE = 'debug_agent_outputs.json'  # New: for debugging
-RATE_LIMIT_DELAY = 7
-MAX_RETRIES = 2
-TIMEOUT_SECONDS = 30
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# --- Load Environment Variables ---
 load_dotenv()
-API_KEY = os.getenv("GOOGLE_API_KEY_2")
 
-# --- Import Agent Logic ---
+# Get the directory where this script is located
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+INPUT_DATA_FILE = os.path.join(SCRIPT_DIR, 'batch_7_testdata.json')
+OUTPUT_RESULTS_FILE = os.path.join(SCRIPT_DIR, 'batch_7_results.json')
+DEBUG_OUTPUT_FILE = os.path.join(SCRIPT_DIR, 'batch_7_debug.json')
+RATE_LIMIT_DELAY = 7
+BATCH_NUM = 7
+
+API_KEY = os.getenv("GOOGLE_API_KEY_7")
+if not API_KEY:
+    print(f"ERROR: GOOGLE_API_KEY_7 not found")
+    sys.exit(1)
+
 try:
     from app.services.assistant import graph
-    print("✅ Successfully imported agent graph.")
 except ImportError as e:
-    print(f"❌ Error importing agent logic: {e}")
-    print("Please ensure the agent logic is correctly structured for import.")
+    print(f"Error importing agent: {e}")
     sys.exit(1)
 
 class ToolCallEvaluator:
-    """Evaluates agent performance by directly inspecting tool calls and state changes"""
-    
     def __init__(self):
         self.reset_metrics()
-        self.debug_outputs = []  # Store raw outputs for debugging
+        self.debug_outputs = []
     
     def reset_metrics(self):
         self.metrics = {
@@ -73,14 +72,8 @@ class ToolCallEvaluator:
         }
 
 class AgentStateInspector:
-    """Enhanced inspector with better debugging capabilities"""
-    
     @staticmethod
     def extract_tool_calls_enhanced(agent_output: Any) -> Tuple[List[Dict], Dict]:
-        """
-        Enhanced tool call extraction with comprehensive debugging info.
-        Returns: (tool_calls, debug_info)
-        """
         tool_calls = []
         debug_info = {
             "output_type": str(type(agent_output)),
@@ -91,27 +84,20 @@ class AgentStateInspector:
             "raw_structure": None
         }
         
-        # Debug: Capture the structure
         if hasattr(agent_output, 'keys'):
             debug_info["output_keys"] = list(agent_output.keys())
         
         try:
-            # Try multiple ways to access messages
             messages = None
             
-            # Method 1: Direct access
             if isinstance(agent_output, dict) and "messages" in agent_output:
                 messages = agent_output["messages"]
                 debug_info["messages_found"] = True
                 debug_info["access_method"] = "direct_dict"
-            
-            # Method 2: Check if it's a state with messages
             elif hasattr(agent_output, 'get') and agent_output.get("messages"):
                 messages = agent_output.get("messages")
                 debug_info["messages_found"] = True
                 debug_info["access_method"] = "get_method"
-                
-            # Method 3: Check for different key names
             elif isinstance(agent_output, dict):
                 for key in ["message", "outputs", "response", "result"]:
                     if key in agent_output:
@@ -119,8 +105,6 @@ class AgentStateInspector:
                         debug_info["messages_found"] = True
                         debug_info["access_method"] = f"alternate_key_{key}"
                         break
-            
-            # Method 4: If agent_output itself is a list of messages
             elif isinstance(agent_output, list):
                 messages = agent_output
                 debug_info["messages_found"] = True
@@ -133,7 +117,6 @@ class AgentStateInspector:
                     msg_type = str(type(message))
                     debug_info["message_types"].append(msg_type)
                     
-                    # Extract tool calls with multiple approaches
                     if hasattr(message, 'tool_calls') and message.tool_calls:
                         for tc in message.tool_calls:
                             tool_call = {
@@ -145,7 +128,6 @@ class AgentStateInspector:
                             }
                             tool_calls.append(tool_call)
                     
-                    # Check for tool results
                     elif hasattr(message, 'type') and getattr(message, 'type') == "tool":
                         tool_result = {
                             "name": getattr(message, 'name', 'unknown'),
@@ -156,10 +138,8 @@ class AgentStateInspector:
                         }
                         tool_calls.append(tool_result)
                     
-                    # Alternative: Check for tool-related content in regular messages
                     elif hasattr(message, 'content'):
                         content = str(message.content)
-                        # Look for assessment patterns in content
                         if "Total Score:" in content or "Interpretation:" in content:
                             tool_result = {
                                 "name": "calculate_assessment_score",
@@ -170,7 +150,6 @@ class AgentStateInspector:
                             }
                             tool_calls.append(tool_result)
                         
-                        # Look for crisis-related patterns
                         crisis_keywords = ["therapist alert", "crisis protocol", "emergency", "suicide", "self-harm"]
                         if any(keyword in content.lower() for keyword in crisis_keywords):
                             tool_result = {
@@ -185,7 +164,6 @@ class AgentStateInspector:
         except Exception as e:
             debug_info["extraction_error"] = str(e)
         
-        # Store raw structure (truncated for debugging)
         try:
             debug_info["raw_structure"] = str(agent_output)[:500] + "..." if len(str(agent_output)) > 500 else str(agent_output)
         except:
@@ -195,10 +173,6 @@ class AgentStateInspector:
     
     @staticmethod
     def extract_assessment_results_enhanced(tool_calls: List[Dict]) -> Tuple[Dict, List[str]]:
-        """
-        Enhanced assessment extraction with better pattern matching.
-        Returns: (assessment_results, parsing_issues)
-        """
         assessment_results = {}
         parsing_issues = []
         tool_args_map = {tc['id']: tc.get('args', {}) for tc in tool_calls if tc.get('type') == 'tool_call'}
@@ -209,15 +183,13 @@ class AgentStateInspector:
                 
                 result_content = tool_call.get("result", "")
                 
-                # Multiple regex patterns for score extraction
                 score_patterns = [
                     r"Total Score:\s*(\d+)",
                     r"Score:\s*(\d+)",
-                    r"total_score[\"']?\s*:\s*(\d+)",
+                    r"total_score[\"\'\']?\s*:\s*(\d+)",
                     r"(\d+)\s*out of"
                 ]
                 
-                # Multiple regex patterns for severity extraction
                 severity_patterns = [
                     r"Interpretation:\s*([^\n\r]+)",
                     r"Severity:\s*([^\n\r]+)",
@@ -229,7 +201,6 @@ class AgentStateInspector:
                 total_score = None
                 severity = None
                 
-                # Try score patterns
                 for pattern in score_patterns:
                     match = re.search(pattern, result_content, re.IGNORECASE)
                     if match:
@@ -239,21 +210,17 @@ class AgentStateInspector:
                         except ValueError:
                             continue
                 
-                # Try severity patterns
                 for pattern in severity_patterns:
                     match = re.search(pattern, result_content, re.IGNORECASE)
                     if match:
                         severity = match.group(1).strip()
-                        # Clean up common artifacts
-                        severity = re.sub(r'["\']', '', severity)
-                        severity = severity.strip('.,;')
+                        severity = re.sub(r'[\"\'\']', '', severity)
+                        severity = severity.strip('.,;').lower()
                         break
                 
-                # Try to infer assessment type
                 original_args = tool_args_map.get(tool_call.get("id"), {})
                 assessment_type = original_args.get("assessment_type")
                 
-                # If not found in args, try to infer from content
                 if not assessment_type:
                     content_lower = result_content.lower()
                     if "phq" in content_lower or "depression" in content_lower:
@@ -282,10 +249,6 @@ class AgentStateInspector:
     
     @staticmethod
     def extract_crisis_actions_enhanced(tool_calls: List[Dict]) -> Tuple[Dict, List[str]]:
-        """
-        Enhanced crisis detection with multiple detection methods.
-        Returns: (crisis_actions, detection_reasons)
-        """
         crisis_actions = {"crisis_detected": False, "therapist_notified": False}
         detection_reasons = []
         
@@ -293,14 +256,12 @@ class AgentStateInspector:
             tool_name = tool_call.get("name", "").lower()
             content = tool_call.get("result", "") or str(tool_call.get("args", ""))
             
-            # Method 1: Direct tool name matching
             if any(keyword in tool_name for keyword in ["therapist_alert", "crisis_protocol", "emergency"]):
                 crisis_actions["crisis_detected"] = True
                 if "therapist_alert" in tool_name:
                     crisis_actions["therapist_notified"] = True
                 detection_reasons.append(f"Tool name match: {tool_name}")
             
-            # Method 2: Content-based detection
             crisis_keywords = [
                 "suicide", "suicidal", "kill myself", "end my life", 
                 "overdose", "self-harm", "hurt myself", "crisis",
@@ -314,7 +275,6 @@ class AgentStateInspector:
                     detection_reasons.append(f"Content keyword: {keyword}")
                     break
             
-            # Method 3: Inferred crisis actions
             if tool_call.get("type") == "crisis_inferred":
                 crisis_actions["crisis_detected"] = True
                 detection_reasons.append("Crisis pattern inferred from message content")
@@ -322,9 +282,9 @@ class AgentStateInspector:
         return crisis_actions, detection_reasons
 
 def run_agent_with_enhanced_inspection(input_data: Dict, config: Dict) -> Tuple[Any, List[Dict], Dict, Optional[str], float]:
-    """Enhanced agent runner with comprehensive debugging"""
     start_time = time.time()
     try:
+        os.environ["GOOGLE_API_KEY"] = API_KEY
         result = graph.invoke(input_data, config)
         response_time = time.time() - start_time
         tool_calls, debug_info = AgentStateInspector.extract_tool_calls_enhanced(result)
@@ -334,15 +294,13 @@ def run_agent_with_enhanced_inspection(input_data: Dict, config: Dict) -> Tuple[
         debug_info = {"error": str(e), "execution_failed": True}
         return None, [], debug_info, f"Agent execution failed: {str(e)}", response_time
 
-def evaluate_single_case_enhanced(case: Dict, evaluator: ToolCallEvaluator) -> Dict:
-    """Enhanced evaluation with comprehensive debugging"""
+def evaluate_single_case_enhanced(case: Dict, evaluator: ToolCallEvaluator, case_index: int, total_cases: int) -> Dict:
     try:
         input_data = {"messages": [HumanMessage(content=case["user_input"])]}
         config = {"configurable": {"user_id": 1, "thread_id": str(uuid.uuid4())}}
         
         agent_output, tool_calls, debug_info, error_message, response_time = run_agent_with_enhanced_inspection(input_data, config)
         
-        # Store debug info
         debug_entry = {
             "test_id": case.get("test_id"),
             "debug_info": debug_info,
@@ -370,20 +328,26 @@ def evaluate_single_case_enhanced(case: Dict, evaluator: ToolCallEvaluator) -> D
             result["evaluation_status"] = "failed"
             return result
         
-        # Enhanced screening evaluation
         assessment_type = case.get("assessment_type")
         expected_total_score = case.get("expected_total_score")
+        expected_scores = case.get("expected_scores", [])
+        expected_severity = case.get("expected_severity")
         
-        if assessment_type and assessment_type != "none" and expected_total_score is not None:
-            assessment_results, parsing_issues = AgentStateInspector.extract_assessment_results_enhanced(tool_calls)
-            
+        # FIX #1: CORRECTED SCREENING EVALUATION LOGIC
+        should_evaluate_screening = (
+            (case.get("type") == "screening" or assessment_type not in [None, "none", "multiple"]) and
+            (len(expected_scores) > 0 or expected_severity is not None)
+        )
+        
+        if should_evaluate_screening:
+            assessment_results, parsing_issues = AgentStateInspector.extract_assessment_results_enhanced(tool_calls)    
+
             if parsing_issues:
                 result["parsing_issues"] = parsing_issues
             
             screening_eval = evaluate_screening_case_enhanced(case, assessment_results, evaluator)
             result.update(screening_eval)
         
-        # Enhanced crisis evaluation
         crisis_actions, detection_reasons = AgentStateInspector.extract_crisis_actions_enhanced(tool_calls)
         
         if detection_reasons:
@@ -398,6 +362,10 @@ def evaluate_single_case_enhanced(case: Dict, evaluator: ToolCallEvaluator) -> D
         evaluator.metrics["performance"]["tool_call_counts"].append(len(tool_calls))
         
         result["evaluation_status"] = "success"
+        
+        if (case_index + 1) % 20 == 0:
+            print(f"[Batch {BATCH_NUM}] Processed: {case_index + 1}/{total_cases} cases")
+        
         return result
         
     except Exception as e:
@@ -411,10 +379,13 @@ def evaluate_single_case_enhanced(case: Dict, evaluator: ToolCallEvaluator) -> D
         }
 
 def evaluate_screening_case_enhanced(case: Dict, assessment_results: Dict, evaluator: ToolCallEvaluator) -> Dict:
-    """Enhanced screening evaluation"""
     assessment_type = case.get("assessment_type")
     expected_total = case.get("expected_total_score")
-    expected_severity = safe_get_string(case, "expected_severity", "").lower().strip()
+    
+    # FIX #2: Properly handle null/None severity
+    expected_severity = case.get("expected_severity")
+    if expected_severity is not None:
+        expected_severity = str(expected_severity).lower().strip()
     
     result = {"assessment_type": assessment_type}
     
@@ -426,48 +397,68 @@ def evaluate_screening_case_enhanced(case: Dict, assessment_results: Dict, evalu
         evaluator.metrics["screening"]["tool_call_success"] += 1
         actual_data = assessment_results[assessment_type]
         actual_total = actual_data.get("total_score")
-        actual_severity = str(actual_data.get("severity", "")).lower().strip()
+        actual_severity = actual_data.get("severity")  # Already normalized in extraction
         
         score_accuracy = 1.0 if actual_total == expected_total else 0.0
-        severity_accuracy = 1.0 if actual_severity == expected_severity else 0.0
+        
+        # FIX #2: Only compare severity if BOTH expected and actual exist
+        severity_accuracy = None
+        if expected_severity is not None and actual_severity is not None:
+            severity_accuracy = 1.0 if actual_severity == expected_severity else 0.0
+            evaluator.metrics["screening"]["severity_accuracy"].append(severity_accuracy)
+            if severity_accuracy == 1.0: 
+                assess_metrics["correct_severity"] += 1
         
         result.update({
-            "expected_total": expected_total, "actual_total": actual_total,
-            "expected_severity": expected_severity, "actual_severity": actual_severity,
-            "score_accuracy": score_accuracy, "severity_accuracy": severity_accuracy,
+            "expected_total": expected_total, 
+            "actual_total": actual_total,
+            "expected_severity": expected_severity, 
+            "actual_severity": actual_severity,
+            "score_accuracy": score_accuracy, 
+            "severity_accuracy": severity_accuracy,
             "tool_call_success": True,
             "raw_assessment_content": actual_data.get("raw_content", "")
         })
         
         evaluator.metrics["screening"]["score_accuracy"].append(score_accuracy)
-        evaluator.metrics["screening"]["severity_accuracy"].append(severity_accuracy)
-        if score_accuracy == 1.0: assess_metrics["correct_scores"] += 1
-        if severity_accuracy == 1.0: assess_metrics["correct_severity"] += 1
+        if score_accuracy == 1.0: 
+            assess_metrics["correct_scores"] += 1
         
-        assess_metrics["confusion_matrix"][expected_severity][actual_severity] += 1
+        # FIXED: Handle None in confusion matrix
+        expected_key = expected_severity if expected_severity is not None else "no_expectation"
+        assess_metrics["confusion_matrix"][expected_key][actual_severity] += 1
     else:
+        # FIXED: Initialize actual_severity before using it
+        actual_severity = "not_detected"
+        
         evaluator.metrics["screening"]["tool_call_failures"] += 1
         result.update({ 
             "tool_call_success": False, 
             "score_accuracy": 0.0, 
-            "severity_accuracy": 0.0,
+            "severity_accuracy": None,
             "missing_assessment": True
         })
         evaluator.metrics["screening"]["score_accuracy"].append(0.0)
-        evaluator.metrics["screening"]["severity_accuracy"].append(0.0)
-        assess_metrics["confusion_matrix"][expected_severity]["not_detected"] += 1
+        
+        if expected_severity is not None:
+            evaluator.metrics["screening"]["severity_accuracy"].append(0.0)
+        
+        expected_key = expected_severity if expected_severity is not None else "no_expectation"
+        assess_metrics["confusion_matrix"][expected_key][actual_severity] += 1
         
     return result
 
 def evaluate_crisis_case_enhanced(case: Dict, crisis_actions: Dict, evaluator: ToolCallEvaluator) -> Dict:
-    """Enhanced crisis evaluation"""
-    expected_action = safe_get_string(case, "expected_action", "")
-    expected_alert = expected_action == "send_therapist_alert"
+    crisis_level = case.get("expected_crisis_level", "none")
+
+    # Clinical standard: Only imminent/high/moderate trigger alerts
+    expected_alert = crisis_level in ["imminent", "high", "moderate"]
     actual_alert = crisis_actions["crisis_detected"]
     
     result = {
         "expected_alert": expected_alert, 
         "actual_alert": actual_alert,
+        "crisis_level": crisis_level,
         "therapist_notified": crisis_actions["therapist_notified"],
         "crisis_detection_method": "enhanced"
     }
@@ -478,7 +469,7 @@ def evaluate_crisis_case_enhanced(case: Dict, crisis_actions: Dict, evaluator: T
         evaluator.metrics["crisis"]["false_positives"] += 1
     elif expected_alert and not actual_alert: 
         evaluator.metrics["crisis"]["false_negatives"] += 1
-        result["missed_crisis"] = True  # Flag for analysis
+        result["missed_crisis"] = True
     else: 
         evaluator.metrics["crisis"]["true_negatives"] += 1
 
@@ -489,17 +480,14 @@ def evaluate_crisis_case_enhanced(case: Dict, crisis_actions: Dict, evaluator: T
     return result
 
 def safe_get_string(data: Dict, key: str, default: str = "") -> str:
-    """Safely get a string value from a dictionary, handling None values"""
     value = data.get(key, default)
     if value is None:
         return default
     return str(value)
 
 def calculate_final_metrics(evaluator: ToolCallEvaluator) -> Dict:
-    """Calculate comprehensive final metrics from the evaluation"""
     metrics = evaluator.metrics
     
-    # Screening Metrics
     sm = metrics["screening"]
     screening_summary = {
         "total_cases": sm["total_cases"],
@@ -509,7 +497,6 @@ def calculate_final_metrics(evaluator: ToolCallEvaluator) -> Dict:
         "by_assessment": {k: dict(v) for k, v in sm["by_assessment"].items()}
     }
     
-    # Crisis Metrics
     cm = metrics["crisis"]
     tp, fp, fn, tn = cm["true_positives"], cm["false_positives"], cm["false_negatives"], cm["true_negatives"]
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0
@@ -524,7 +511,6 @@ def calculate_final_metrics(evaluator: ToolCallEvaluator) -> Dict:
         "specificity": specificity, "accuracy": accuracy,
     }
     
-    # Performance Metrics
     perf = metrics["performance"]
     performance_summary = {
         "total_evaluations": perf["total_evaluations"],
@@ -540,110 +526,63 @@ def calculate_final_metrics(evaluator: ToolCallEvaluator) -> Dict:
     }
 
 def main():
-    """Main function to run the enhanced evaluation"""
-    print("🚀 Starting Enhanced Tool Call Based Evaluation with Debugging...")
+    print(f"Starting Batch {BATCH_NUM}")
+    
     try:
         with open(INPUT_DATA_FILE, 'r') as f:
-            test_cases = json.load(f).get('test_cases', [])
-        print(f"✅ Loaded {len(test_cases)} total test cases from {INPUT_DATA_FILE}")
+            test_data = json.load(f)
+            test_cases = test_data.get('test_cases', [])
+        print(f"Loaded {len(test_cases)} test cases")
     except Exception as e:
-        print(f"❌ Error loading test data: {e}")
+        print(f"Error loading test data: {e}")
         return
-    
-    # Run on a small sample first for debugging
-    test_cases = test_cases[:20]  # Start with 5 cases for debugging
-    print(f"🔬 Running on {len(test_cases)} cases for debugging.")
     
     evaluator = ToolCallEvaluator()
     results = []
     start_time = time.time()
     
     for i, case in enumerate(test_cases):
-        print(f"\n[{i+1}/{len(test_cases)}] Evaluating: {case.get('test_id', 'unknown')}...")
-        try:
-            result = evaluate_single_case_enhanced(case, evaluator)
-            results.append(result)
-            
-            # Show detailed progress
-            if result.get("evaluation_status") == "success":
-                debug_sum = result.get("debug_summary", {})
-                print(f"   ✅ Success - Tool calls: {result.get('tool_calls_count', 0)}")
-                print(f"      Messages found: {debug_sum.get('messages_found', False)}")
-                print(f"      Messages count: {debug_sum.get('messages_count', 0)}")
-                print(f"      Access method: {debug_sum.get('access_method', 'none')}")
-                
-                if result.get("crisis_detection_reasons"):
-                    print(f"      Crisis detected via: {result['crisis_detection_reasons']}")
-                    
-                if result.get("parsing_issues"):
-                    print(f"      ⚠️  Parsing issues: {len(result['parsing_issues'])}")
-                    
-            else:
-                print(f"   ❌ Failed - {result.get('error', 'Unknown error')}")
-                
-        except Exception as e:
-            print(f"   ❌ Critical error: {str(e)}")
-            results.append({
-                "test_id": case.get("test_id", "unknown"),
-                "error": f"Critical evaluation error: {str(e)}",
-                "evaluation_status": "failed"
-            })
+        print(f"[{i+1}/{len(test_cases)}] {case.get('test_id', 'unknown')}...")
+        result = evaluate_single_case_enhanced(case, evaluator, i, len(test_cases))
+        results.append(result)
         
-        # Rate limiting
+        if result.get("evaluation_status") == "success":
+            print(f"  ✅ Tool calls: {result.get('tool_calls_count', 0)}")
+        else:
+            print(f"  ❌ {result.get('error', 'Unknown error')}")
+        
         if i < len(test_cases) - 1:
             time.sleep(RATE_LIMIT_DELAY)
     
+    total_time = time.time() - start_time
     final_metrics = calculate_final_metrics(evaluator)
+    
     output = {
+        "batch_number": BATCH_NUM,
         "evaluation_metadata": {
-            "evaluation_type": "enhanced_tool_call_based",
+            "evaluation_type": "enhanced_tool_call_based_fixed",
             "total_cases_evaluated": len(results),
             "successful_evaluations": sum(1 for r in results if r.get("evaluation_status") == "success"),
             "failed_evaluations": sum(1 for r in results if r.get("evaluation_status") == "failed"),
-            "total_evaluation_time_seconds": time.time() - start_time,
+            "total_evaluation_time_seconds": total_time,
             "evaluation_date": datetime.now().isoformat()
         },
         "summary_metrics": final_metrics,
         "detailed_results": results
     }
     
-    # Save main results
     try:
         with open(OUTPUT_RESULTS_FILE, 'w') as f:
             json.dump(output, f, indent=2)
-        print(f"\n✅ Enhanced evaluation complete! Results saved to {OUTPUT_RESULTS_FILE}")
-        
-        # Save debug outputs separately
         with open(DEBUG_OUTPUT_FILE, 'w') as f:
             json.dump(evaluator.debug_outputs, f, indent=2)
-        print(f"🔍 Debug information saved to {DEBUG_OUTPUT_FILE}")
         
-        # Print summary
-        metadata = output["evaluation_metadata"]
-        print(f"\n📊 Enhanced Evaluation Summary:")
-        print(f"   Total cases: {metadata['total_cases_evaluated']}")
-        print(f"   Successful: {metadata['successful_evaluations']}")
-        print(f"   Failed: {metadata['failed_evaluations']}")
-        print(f"   Total time: {metadata['total_evaluation_time_seconds']:.2f} seconds")
-        
-        # Print debug insights
-        debug_summary = {}
-        for debug_entry in evaluator.debug_outputs:
-            access_method = debug_entry["debug_info"].get("access_method", "none")
-            debug_summary[access_method] = debug_summary.get(access_method, 0) + 1
-            
-        print(f"\n🔍 Debug Summary:")
-        for method, count in debug_summary.items():
-            print(f"   {method}: {count} cases")
+        print(f"\nBatch {BATCH_NUM} Complete!")
+        print(f"Success: {output['evaluation_metadata']['successful_evaluations']}/{len(results)}")
+        print(f"Time: {total_time:.2f}s")
         
     except Exception as e:
-        print(f"❌ Error saving results: {e}")
-    
-    print(f"\n📋 Next Steps:")
-    print(f"1. Check {DEBUG_OUTPUT_FILE} to understand how tool calls are being extracted")
-    print(f"2. Look for patterns in access_method to understand your agent's output structure")
-    print(f"3. Adjust the extraction logic based on findings")
-    print(f"4. Re-run with full dataset once extraction is working correctly")
+        print(f"Error saving results: {e}")
 
 if __name__ == "__main__":
     main()
