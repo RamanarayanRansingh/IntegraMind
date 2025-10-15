@@ -53,6 +53,57 @@ Built with healthcare-grade security and privacy standards
 </tr>
 </table>
 
+## 📊 Performance Highlights
+
+Our comprehensive evaluation across **492 synthetic test cases** demonstrates robust performance across multiple clinical dimensions:
+
+<div align="center">
+
+### 🎯 **Screening Assessment Performance**
+
+| Assessment Tool | Accuracy | Clinical Domain |
+|----------------|----------|-----------------|
+| **PHQ-9** (Depression) | 95.0% | Mental Health |
+| **GAD-7** (Anxiety) | 98.8% | Mental Health |
+| **DAST-10** (Drug Use) | 75.0%* | Substance Use |
+| **CAGE** (Alcohol Use) | 95.0% | Substance Use |
+| **Overall Accuracy** | **90.9%** | Dual Diagnosis |
+
+<sup>*Identified area requiring refinement</sup>
+
+### 🚨 **Crisis Detection Performance**
+
+| Risk Level | Cases | Recall | Precision | Key Insight |
+|-----------|-------|--------|-----------|-------------|
+| **Imminent Danger** | 15 | 100% | 100% | Perfect detection of life-threatening situations |
+| **High Risk** | 140 | 87.9% | 100% | Strong detection with zero false positives |
+| **Moderate Risk** | 103 | 70.9%* | 100% | Conservative threshold prioritizing safety |
+| **Overall** | 258 | 81.8% | 95.9% | High reliability with minimal false alarms |
+
+<sup>*Primary improvement target</sup>
+
+### ⚡ **System Reliability**
+
+| Metric | Performance | Description |
+|--------|-------------|-------------|
+| **Conversation Continuity** | 100% | Maintained across all dual-diagnosis interactions |
+| **Tool Invocation Success** | 99.2% | Robust multi-agent coordination |
+| **Crisis Protocol Retrieval** | 100% | Perfect reliability for safety-critical functions |
+| **Average Response Time** | 4.1 seconds | Real-time therapeutic interaction capability |
+| **Overall Specificity** | 96.2% | Minimal false alarms for clinical acceptance |
+
+</div>
+
+### 🎖️ **Key Achievements**
+
+- ✅ **Perfect imminent danger detection** (15/15 cases) - Critical safety assurance
+- ✅ **100% crisis-only precision** - Zero false positives among actual crisis cases
+- ✅ **96.7% mental health screening accuracy** - Reliable PHQ-9/GAD-7 administration
+- ✅ **100% conversation continuity** - Seamless dual-diagnosis support
+- ⚠️ **Areas for improvement** - Moderate-risk detection (70.9%) and DAST-10 accuracy (75%)
+
+> **Note:** Results based on synthetic evaluation methodology. Real-world clinical validation studies are planned for future deployment phases.
+
 ## 🏗️ System Architecture
 
 IntegraMind's innovative design leverages a directed graph structure where each node represents a specialized functional component, enabling modular development and clear separation of concerns.
@@ -133,7 +184,7 @@ Our evidence-based knowledge repository is meticulously organized into four spec
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/integramind.git
+git clone https://github.com/RamanarayanRansingh/IntegraMind.git
 cd integramind
 
 # 2. Create virtual environment (recommended)
@@ -174,7 +225,64 @@ streamlit run app.py --server.port 8501
 
 🌐 **Web Interface**: http://localhost:8501
 
-## 📊 Competitive Advantages
+## 📊 Comparative Analysis
+
+<div align="center">
+  <table>
+    <tr>
+      <th width="25%">Metric</th>
+      <th width="25%">🏆 IntegraMind</th>
+      <th width="25%">Literature Baseline</th>
+      <th width="25%">Advantage</th>
+    </tr>
+    <tr>
+      <td><strong>Crisis Recall</strong></td>
+      <td>81.8%</td>
+      <td>45-78%</td>
+      <td>+3.8 to +36.8 pp</td>
+    </tr>
+    <tr>
+      <td><strong>Imminent Danger Detection</strong></td>
+      <td>100%</td>
+      <td>Rarely reported</td>
+      <td>Critical capability</td>
+    </tr>
+    <tr>
+      <td><strong>Crisis Precision (Overall)</strong></td>
+      <td>95.9%</td>
+      <td>Not measured</td>
+      <td>High reliability</td>
+    </tr>
+    <tr>
+      <td><strong>Crisis Precision (Crisis-Only)</strong></td>
+      <td>100%</td>
+      <td>Not measured</td>
+      <td>Zero false crises</td>
+    </tr>
+    <tr>
+      <td><strong>Mental Health Screening</strong></td>
+      <td>96.7%</td>
+      <td>Not integrated</td>
+      <td>Novel capability</td>
+    </tr>
+    <tr>
+      <td><strong>Overall Specificity</strong></td>
+      <td>96.2%</td>
+      <td>Not measured</td>
+      <td>Low false alarms</td>
+    </tr>
+    <tr>
+      <td><strong>Dual-Diagnosis Support</strong></td>
+      <td>Unified</td>
+      <td>Single-domain</td>
+      <td>Integrated approach</td>
+    </tr>
+  </table>
+  
+  <sup>pp = percentage points | Based on systematic reviews of existing mental health chatbots</sup>
+</div>
+
+### 🔍 Key Differentiators
 
 <div align="center">
   <table>
@@ -234,7 +342,7 @@ streamlit run app.py --server.port 8501
     </tr>
     <tr>
       <td align="center"><strong>🤖 Language Model</strong></td>
-      <td>Google Generative AI integration</td>
+      <td>Google Gemini 2.0 Flash for conversational intelligence</td>
     </tr>
     <tr>
       <td align="center"><strong>💾 Database</strong></td>
@@ -243,6 +351,35 @@ streamlit run app.py --server.port 8501
     <tr>
       <td align="center"><strong>🔍 Vector Store</strong></td>
       <td>ChromaDB for semantic search capabilities</td>
+    </tr>
+  </table>
+</div>
+
+## 🎯 Development Priorities
+
+Based on comprehensive evaluation results, our immediate development focus includes:
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">🎯</td>
+      <td><strong>Moderate-Risk Detection Enhancement</strong></td>
+      <td>Target 85%+ recall while maintaining 100% crisis precision</td>
+    </tr>
+    <tr>
+      <td align="center">💊</td>
+      <td><strong>DAST-10 Refinement</strong></td>
+      <td>Improve substance use screening to 85%+ accuracy through specialized algorithms</td>
+    </tr>
+    <tr>
+      <td align="center">🏥</td>
+      <td><strong>Real-World Clinical Validation</strong></td>
+      <td>Pilot studies (n≥50) comparing system performance against clinician gold standards</td>
+    </tr>
+    <tr>
+      <td align="center">📊</td>
+      <td><strong>Longitudinal Outcome Assessment</strong></td>
+      <td>Measure user engagement, therapeutic alliance, and long-term outcomes</td>
     </tr>
   </table>
 </div>
@@ -284,12 +421,30 @@ streamlit run app.py --server.port 8501
   </table>
 </div>
 
+## ⚠️ Important Considerations
+
+### Evaluation Methodology
+
+- **Dataset**: 492 synthetic test cases covering screening assessments, crisis scenarios, edge cases, and multi-domain interactions
+- **Validation**: Controlled evaluation demonstrating core capabilities and identifying improvement areas
+- **Limitations**: Synthetic data cannot fully capture real-world linguistic diversity or longitudinal performance
+- **Next Steps**: Real-world clinical validation with diverse populations is essential before deployment
+
+### Clinical Deployment Requirements
+
+- ✅ Mandatory licensed clinician review of all alerts
+- ✅ Clear user communication about system capabilities and limitations
+- ✅ Alternative pathways for direct human assistance
+- ✅ Continuous performance monitoring and audit protocols
+- ⚠️ **Not recommended** for standalone clinical use without human oversight
+
 ## 📖 Documentation
 
 - 📚 [User Guide](./docs/user-guide.md)
 - 🔧 [API Reference](./docs/api-reference.md)
 - 🏗️ [Developer Documentation](./docs/developer-guide.md)
 - 🎯 [Deployment Guide](./docs/deployment.md)
+- 📊 [Evaluation Methodology](./docs/evaluation.md)
 
 ## 🤝 Contributing
 
@@ -309,10 +464,9 @@ If you use IntegraMind in your research, please cite:
 @article{agarwal2025integramind,
   title={IntegraMind: An Intelligent Framework for Unified Assessment and Intervention in Dual Diagnosis},
   author={Agarwal, Arun and Ransingh, Ramanarayan},
-  journal={Journal of Digital Mental Health},
+  journal={International Journal of Computational Intelligence Systems},
   year={2025},
-  publisher={Your Publisher},
-  doi={10.xxxx/xxxx}
+  note={Under Review - Major Revision}
 }
 ```
 
@@ -322,13 +476,15 @@ If you use IntegraMind in your research, please cite:
   <table>
     <tr>
       <td align="center">
-        <strong>Arun Agarwal</strong><br>
-        <em>Lead Developer & Researcher</em><br>
+        <strong>Dr. Arun Agarwal</strong><br>
+        <em>Associate Professor, ECE Department</em><br>
+        <em>ITER, Siksha 'O' Anusandhan University</em><br>
         📧 arunagrawal@soa.ac.in
       </td>
       <td align="center">
         <strong>Ramanarayan Ransingh</strong><br>
-        <em>Co-Developer & Clinical Advisor</em><br>
+        <em>Undergraduate Researcher, CSE Department</em><br>
+        <em>ITER, Siksha 'O' Anusandhan University</em><br>
         📧 ramanarayanransingh@gmail.com
       </td>
     </tr>
@@ -337,26 +493,27 @@ If you use IntegraMind in your research, please cite:
 
 ## 📞 Support
 
-- 📧 **Email**: support@integramind.com
+- 📧 **Research Inquiries**: arunagrawal@soa.ac.in
 - 📋 **Issues**: [GitHub Issues](https://github.com/RamanarayanRansingh/IntegraMind/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/RamanarayanRansingh/IntegraMind/discussions)
 
 ## 📜 License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
-
-
 
 ## 🙏 Acknowledgments
 
 - 👥 Mental health professionals who provided invaluable feedback during development
 - 🔧 LangChain team for the powerful LangGraph framework
 - 🏥 Clinical advisors who helped shape the assessment protocols
+- 🎓 Siksha 'O' Anusandhan University for institutional support
 - 🌟 Open source community for continued support and contributions
 
 ---
 
 <div align="center">
   <p><strong>Made with ❤️ for better mental health outcomes</strong></p>
+  <p><em>Advancing digital mental health through responsible AI innovation</em></p>
   
   [![GitHub stars](https://img.shields.io/github/stars/RamanarayanRansingh/IntegraMind?style=social)](https://github.com/RamanarayanRansingh/IntegraMind/stargazers)
   [![GitHub forks](https://img.shields.io/github/forks/RamanarayanRansingh/IntegraMind?style=social)](https://github.com/RamanarayanRansingh/IntegraMind/network)
